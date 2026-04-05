@@ -1,0 +1,45 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "admin@betbot.com",
+      "password": "$2a$10$MJs5H5IGXGsNiRaZFi5IgOk1HBRhG/UKo1lqc24NSw3/BZu8G1DnS",
+      "ativo": true,
+      "admin": true,
+      "comprovante": "",
+      "criado_em": "2026-04-05T17:17:32.842Z"
+    },
+    {
+      "id": 2,
+      "name": "Pedro",
+      "email": "pedromanoel0698@gmail.com",
+      "password": "$2a$10$Kg/MMUpg7vB3mkTdHrNcRuf/KZWzg1NRKNtnSZW5mLs.YBbt5/Ksu",
+      "ativo": false,
+      "admin": false,
+      "comprovante": "",
+      "criado_em": "2026-04-05T17:21:51.100Z"
+    },
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "pedromanoel7799@gmail.com",
+      "password": "$2a$10$qX59YKtVKE9.Nc1Cc7S68ewzVTX9DDHnBPKYpIsLZ9XrCSLgAQJsK",
+      "ativo": true,
+      "admin": true,
+      "comprovante": "",
+      "criado_em": "2026-04-05T17:27:06.387Z"
+    },
+    {
+      "id": 1,
+      "name": "Admin",
+      "email": "ztxautomacaoeprojetos@gmail.com",
+      "password": "$2a$10$pY66aBwj28bj8HGhmbwpYOSwsV5AIYX4FtxGnOXhToSJmZOy6OEMS",
+      "ativo": true,
+      "admin": true,
+      "comprovante": "",
+      "expira_em": null,
+      "criado_em": "2026-04-05T22:15:41.165Z"
+    }
+  ]
+}
