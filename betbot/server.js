@@ -332,12 +332,10 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url === "/") return sendHTML(res, pageLogin());
   if (req.method === "GET" && url === "/admin") return sendHTML(res, pageAdmin());
 
-  if (req.method === "GET" && url === "/pagamento") {
-    const decoded = verifyToken(req);
-    const user = decoded ? db.get("users").find({ id: decoded.id }).value() : null;
-    if (!user) { res.writeHead(302, { Location: "/" }); res.end(); return; }
-    return sendHTML(res, pagePagamento(user));
-  }
+ if (req.method === "GET" && url === "/pagamento") {
+  const user = { name: "Usuário" };
+  return sendHTML(res, pagePagamento(user));
+}
 
   if (req.method === "GET" && url === "/app") {
     const filePath = path.join(__dirname, "index.html");
