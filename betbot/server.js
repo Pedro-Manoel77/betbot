@@ -14,7 +14,7 @@ const SEU_PIX           = "32991843088";
 const ADMIN_EMAIL       = "ztxautomacaoeprojetos@gmail.com";
 const ADMIN_SENHA       = "Morreuztx7txy";
 const PORT              = process.env.PORT || 3000;
-const adapter = new FileSync("db.json");
+const adapter = new FileSync(process.env.DATABASE_PATH || "db.json");
 const db = low(adapter);
 db.defaults({ users: [] }).write();
 
