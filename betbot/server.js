@@ -4,29 +4,51 @@ const fs = require("fs");
 const path = require("path");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const low = require("lowdb");
-const FileSync = require("lowdb/adapters/FileSync");
-const ANTHROPIC_API_KEY = "AIzaSyBMMm3W-TbEjLzf4-kLh1YnE0DiRAd0EOk";
+const mongoose = require("mongoose");
+
+// ======================================================
+// ⚙️  CONFIGURAÇÕES
+// ======================================================
+const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "AIzaSyBMMm3W-TbEjLzf4-kLh1YnE0DiRAd0EOk";
 const FOOTBALL_API_KEY  = "183b5b9e068285c38162478d9829fe29";
 const JWT_SECRET        = "betbot_secret_2026";
 const PRECO_MENSAL      = "R$ 60,00";
-const SEU_PIX           = "32991843088";
-const ADMIN_EMAIL       = "ztxautomacaoeprojetos@gmail.com";
-const ADMIN_SENHA       = "Morreuztx7txy";
+const SEU_PIX           = "32991843008";
+const ADMIN_EMAIL       = process.env.ADMIN_EMAIL || "ztxautomacaoeprojetos@gmail.com";
+const ADMIN_SENHA       = process.env.ADMIN_SENHA || "Morreuztx7txy";
+const MONGODB_URI       = process.env.MONGODB_URI || "mongodb+srv://pedromanoel7799_db_user:88553079@cluster0.pt6bfhu.mongodb.net/betbot?retryWrites=true&w=majority&appName=Cluster0";
 const PORT              = process.env.PORT || 3000;
-const adapter = new FileSync(process.env.DATABASE_PATH || "db.json");
-const db = low(adapter);
-db.defaults({ users: [] }).write();
+// ======================================================
 
-if (!db.get("users").find({ email: ADMIN_EMAIL }).value()) {
-  db.get("users").push({
-    id: 1, name: "Admin", email: ADMIN_EMAIL,
-    password: bcrypt.hashSync(ADMIN_SENHA, 10),
-    ativo: true, admin: true, comprovante: "",
-    expira_em: null, criado_em: new Date().toISOString()
-  }).write();
-  console.log("✅ Admin criado:", ADMIN_EMAIL);
-}
+// Schema MongoDB
+const userSchema = new mongoose.Schema({
+  name: String,
+  email: { type: String, unique: true },
+  password: String,
+  ativo: { type: Boolean, default: false },
+  admin: { type: Boolean, default: false },
+  comprovante: { type: String, default: "" },
+  expira_em: { type: Date, default: null },
+  criado_em: { type: Date, default: Date.now }
+});
+const User = mongoose.model("User", userSchema);
+
+// Conecta ao MongoDB
+mongoose.connect(MONGODB_URI)
+  .then(async () => {
+    console.log("✅ MongoDB conectado!");
+    // Cria admin se não existir
+    const admin = await User.findOne({ email: ADMIN_EMAIL });
+    if (!admin) {
+      await User.create({
+        name: "Admin", email: ADMIN_EMAIL,
+        password: bcrypt.hashSync(ADMIN_SENHA, 10),
+        ativo: true, admin: true
+      });
+      console.log("✅ Admin criado:", ADMIN_EMAIL);
+    }
+  })
+  .catch(e => console.error("❌ Erro MongoDB:", e.message));
 
 function isAtivo(user) {
   if (!user.ativo) return false;
@@ -34,7 +56,6 @@ function isAtivo(user) {
   if (!user.expira_em) return false;
   return new Date(user.expira_em) > new Date();
 }
-
 
 function diasRestantes(user) {
   if (!user.expira_em) return 0;
@@ -61,10 +82,6 @@ function getBody(req) {
     req.on("data", c => body += c);
     req.on("end", () => { try { resolve(JSON.parse(body)); } catch { resolve({}); } });
   });
-}
-function nextId() {
-  const users = db.get("users").value();
-  return users.length > 0 ? Math.max(...users.map(u => u.id)) + 1 : 1;
 }
 
 function getFixturesToday() {
@@ -110,7 +127,9 @@ function callAnthropic(body) {
   });
 }
 
-
+// ======================================================
+// PÁGINAS HTML
+// ======================================================
 function pageLogin() {
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot — Login</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -185,20 +204,12 @@ async function cadastrar(){
 }
 
 function pagePagamento(user) {
-  const expirou = user.expira_em && new Date(user.expira_em) < new Date();
-  const titulo = expirou ? "Renovar Assinatura" : "Ativar Acesso";
-  const subtitulo = expirou
-    ? `Sua assinatura expirou em ${new Date(user.expira_em).toLocaleDateString('pt-BR')}. Renove para continuar.`
-    : `Olá, ${user.name}! Assine para ter acesso completo ao BetBot.`;
-
   return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot — Pagamento</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:#0d1f35;border-radius:16px;padding:32px 28px;width:100%;max-width:400px;border:0.5px solid #1a2f47;text-align:center}
 .logo{width:48px;height:48px;background:#00e676;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
 h1{color:#fff;font-size:20px;margin-bottom:6px}p.sub{color:#8899aa;font-size:13px;margin-bottom:20px}
-.badge-exp{background:rgba(255,72,72,.15);color:#ff4848;font-size:12px;padding:6px 14px;border-radius:8px;margin-bottom:16px;display:inline-block}
-.preco{font-size:40px;font-weight:700;color:#00e676;margin:12px 0 2px}
-.preco-sub{color:#8899aa;font-size:12px;margin-bottom:20px}
+.preco{font-size:40px;font-weight:700;color:#00e676;margin:12px 0 2px}.preco-sub{color:#8899aa;font-size:12px;margin-bottom:20px}
 .pix-box{background:#0a1628;border-radius:10px;padding:16px;margin-bottom:16px;border:0.5px solid #1a2f47}
 .pix-label{color:#8899aa;font-size:11px;margin-bottom:6px}.pix-key{color:#00e676;font-size:16px;font-weight:600;word-break:break-all}
 .copy-btn{background:transparent;border:0.5px solid #00e676;color:#00e676;padding:7px 16px;border-radius:8px;font-size:12px;cursor:pointer;margin-top:10px;width:auto}
@@ -212,9 +223,8 @@ button.main{width:100%;padding:13px;background:#00e676;border:none;border-radius
 </style></head><body>
 <div class="card">
   <div class="logo">⚽</div>
-  <h1>${titulo}</h1>
-  ${expirou ? '<div class="badge-exp">⚠️ Assinatura expirada</div>' : ''}
-  <p class="sub">${subtitulo}</p>
+  <h1>Ativar Acesso</h1>
+  <p class="sub">Faça o pagamento para liberar seu acesso ao BetBot.</p>
   <div class="preco">${PRECO_MENSAL}</div>
   <div class="preco-sub">por mês — acesso renovável mensalmente</div>
   <div class="pix-box">
@@ -267,8 +277,7 @@ td{padding:10px 14px;border-top:0.5px solid #1a2f47;color:#ddeeff;font-size:12px
 .btn-ren{background:#1a2f47;border:0.5px solid #00e676;padding:5px 10px;border-radius:6px;color:#00e676;font-size:11px;cursor:pointer;margin-right:4px}
 .btn-blk{background:transparent;border:0.5px solid #ff4848;padding:5px 10px;border-radius:6px;color:#ff4848;font-size:11px;cursor:pointer}
 .comp{color:#8899aa;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.expira{font-size:11px}
-.expira.ok{color:#00e676}.expira.warn{color:#ffd740}.expira.exp{color:#ff4848}
+.expira{font-size:11px}.expira.ok{color:#00e676}.expira.warn{color:#ffd740}.expira.exp{color:#ff4848}
 </style></head><body>
 <div class="header"><h1>⚽ BetBot — Painel Admin</h1><button class="logout" onclick="localStorage.clear();window.location='/'">Sair</button></div>
 <div class="stats" id="stats"></div>
@@ -304,9 +313,9 @@ async function load(){
       expiraStr='<span class="expira '+cls+'">'+(expirou?'Expirou ':'')+new Date(u.expira_em).toLocaleDateString('pt-BR')+((!expirou&&dias)?(' ('+dias+'d)'):'')+'</span>';
     }
     var btns='';
-    if(!u.ativo||expirou) btns+='<button class="btn-lib" onclick="acao('+u.id+',\'liberar\')">Liberar</button>';
-    if(u.ativo&&!expirou) btns+='<button class="btn-ren" onclick="acao('+u.id+',\'renovar\')">+30 dias</button>';
-    if(u.ativo) btns+='<button class="btn-blk" onclick="acao('+u.id+',\'bloquear\')">Bloquear</button>';
+    if(!u.ativo||expirou) btns+='<button class="btn-lib" onclick="acao(\''+u._id+'\',\'liberar\')">Liberar</button>';
+    if(u.ativo&&!expirou) btns+='<button class="btn-ren" onclick="acao(\''+u._id+'\',\'renovar\')">+30 dias</button>';
+    if(u.ativo) btns+='<button class="btn-blk" onclick="acao(\''+u._id+'\',\'bloquear\')">Bloquear</button>';
     return '<tr><td>'+u.name+'</td><td>'+u.email+'</td><td>'+badge+'</td><td>'+expiraStr+'</td><td><span class="comp" title="'+(u.comprovante||'')+'">'+(u.comprovante||'—')+'</span></td><td>'+btns+'</td></tr>';
   }).join('');
 }
@@ -331,11 +340,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && url === "/") return sendHTML(res, pageLogin());
   if (req.method === "GET" && url === "/admin") return sendHTML(res, pageAdmin());
-
- if (req.method === "GET" && url === "/pagamento") {
-  const user = { name: "Usuário" };
-  return sendHTML(res, pagePagamento(user));
-}
+  if (req.method === "GET" && url === "/pagamento") return sendHTML(res, pagePagamento({ name: "Usuário" }));
 
   if (req.method === "GET" && url === "/app") {
     const filePath = path.join(__dirname, "index.html");
@@ -351,23 +356,19 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "POST" && url === "/api/cadastro") {
     const body = await getBody(req);
     if (!body.nome || !body.email || !body.senha) return sendJSON(res, 400, { error: "Preencha todos os campos" });
-    if (db.get("users").find({ email: body.email }).value()) return sendJSON(res, 400, { error: "E-mail já cadastrado" });
-    db.get("users").push({
-      id: nextId(), name: body.nome, email: body.email,
-      password: bcrypt.hashSync(body.senha, 10),
-      ativo: false, admin: false, comprovante: "",
-      expira_em: null, criado_em: new Date().toISOString()
-    }).write();
+    const exists = await User.findOne({ email: body.email });
+    if (exists) return sendJSON(res, 400, { error: "E-mail já cadastrado" });
+    await User.create({ name: body.nome, email: body.email, password: bcrypt.hashSync(body.senha, 10) });
     return sendJSON(res, 200, { ok: true });
   }
 
   // Login
   if (req.method === "POST" && url === "/api/login") {
     const body = await getBody(req);
-    const user = db.get("users").find({ email: body.email }).value();
+    const user = await User.findOne({ email: body.email });
     if (!user || !bcrypt.compareSync(body.senha, user.password)) return sendJSON(res, 401, { error: "E-mail ou senha incorretos" });
     const ativo_agora = isAtivo(user);
-    const token = jwt.sign({ id: user.id, email: user.email, admin: user.admin }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign({ id: user._id, email: user.email, admin: user.admin }, JWT_SECRET, { expiresIn: "7d" });
     return sendJSON(res, 200, { token, admin: user.admin, ativo_agora });
   }
 
@@ -375,10 +376,9 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url === "/api/me") {
     const decoded = verifyToken(req);
     if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
-    const user = db.get("users").find({ id: decoded.id }).value();
-    const ativo_agora = isAtivo(user);
-    const dias = diasRestantes(user);
-    return sendJSON(res, 200, { id: user.id, name: user.name, email: user.email, ativo: ativo_agora, admin: user.admin, expira_em: user.expira_em, dias_restantes: dias });
+    const user = await User.findById(decoded.id);
+    if (!user) return sendJSON(res, 401, { error: "Usuário não encontrado" });
+    return sendJSON(res, 200, { id: user._id, name: user.name, email: user.email, ativo: isAtivo(user), admin: user.admin, expira_em: user.expira_em, dias_restantes: diasRestantes(user) });
   }
 
   // Comprovante
@@ -386,7 +386,7 @@ const server = http.createServer(async (req, res) => {
     const decoded = verifyToken(req);
     if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
     const body = await getBody(req);
-    db.get("users").find({ id: decoded.id }).assign({ comprovante: body.comprovante || "" }).write();
+    await User.findByIdAndUpdate(decoded.id, { comprovante: body.comprovante || "" });
     return sendJSON(res, 200, { ok: true });
   }
 
@@ -394,33 +394,30 @@ const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && url === "/api/admin/users") {
     const decoded = verifyToken(req);
     if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
-    const users = db.get("users").value().map(u => ({
-      id: u.id, name: u.name, email: u.email, ativo: u.ativo,
-      admin: u.admin, comprovante: u.comprovante, expira_em: u.expira_em, criado_em: u.criado_em
-    }));
+    const users = await User.find().sort({ createdAt: -1 });
     return sendJSON(res, 200, users);
   }
 
-  // Admin: liberar (30 dias a partir de hoje)
+  // Admin: liberar
   if (req.method === "POST" && url === "/api/admin/liberar") {
     const decoded = verifyToken(req);
     if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
     const body = await getBody(req);
     const expira = new Date();
     expira.setDate(expira.getDate() + 30);
-    db.get("users").find({ id: body.id }).assign({ ativo: true, expira_em: expira.toISOString(), comprovante: "" }).write();
+    await User.findByIdAndUpdate(body.id, { ativo: true, expira_em: expira, comprovante: "" });
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Admin: renovar (+30 dias a partir da data atual de expiração)
+  // Admin: renovar
   if (req.method === "POST" && url === "/api/admin/renovar") {
     const decoded = verifyToken(req);
     if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
     const body = await getBody(req);
-    const user = db.get("users").find({ id: body.id }).value();
+    const user = await User.findById(body.id);
     const base = user.expira_em && new Date(user.expira_em) > new Date() ? new Date(user.expira_em) : new Date();
     base.setDate(base.getDate() + 30);
-    db.get("users").find({ id: body.id }).assign({ ativo: true, expira_em: base.toISOString(), comprovante: "" }).write();
+    await User.findByIdAndUpdate(body.id, { ativo: true, expira_em: base, comprovante: "" });
     return sendJSON(res, 200, { ok: true });
   }
 
@@ -429,7 +426,7 @@ const server = http.createServer(async (req, res) => {
     const decoded = verifyToken(req);
     if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
     const body = await getBody(req);
-    db.get("users").find({ id: body.id }).assign({ ativo: false }).write();
+    await User.findByIdAndUpdate(body.id, { ativo: false });
     return sendJSON(res, 200, { ok: true });
   }
 
@@ -467,12 +464,10 @@ server.listen(PORT, () => {
   console.log(`║   Acesse: http://localhost:${PORT}       ║`);
   console.log("╚══════════════════════════════════════╝");
   console.log("");
-  console.log("👤 Admin:", ADMIN_EMAIL);
-  console.log("🔑 Senha:", ADMIN_SENHA);
   console.log("💰 PIX:", SEU_PIX);
   console.log("💵 Preço:", PRECO_MENSAL, "/ mês");
   console.log("");
-  if (ANTHROPIC_API_KEY === "SUA_CHAVE_ANTHROPIC_AQUI") console.log("⚠️  Configure ANTHROPIC_API_KEY no server.js");
+  if (ANTHROPIC_API_KEY === "SUA_CHAVE_ANTHROPIC_AQUI") console.log("⚠️  Configure ANTHROPIC_API_KEY");
   else console.log("✅ Anthropic configurada");
   console.log("✅ API-Football configurada");
 });
