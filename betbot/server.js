@@ -38,15 +38,13 @@ mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB conectado!");
     // Cria admin se não existir
-    const admin = await User.findOne({ email: ADMIN_EMAIL });
-    if (!admin) {
-      await User.create({
-        name: "Admin", email: ADMIN_EMAIL,
-        password: bcrypt.hashSync(ADMIN_SENHA, 10),
-        ativo: true, admin: true
-      });
-      console.log("✅ Admin criado:", ADMIN_EMAIL);
-    }
+    await User.deleteOne({ email: ADMIN_EMAIL });
+await User.create({
+  name: "Admin", email: ADMIN_EMAIL,
+  password: bcrypt.hashSync(ADMIN_SENHA, 10),
+  ativo: true, admin: true
+});
+console.log("✅ Admin recriado:", ADMIN_EMAIL);
   })
   .catch(e => console.error("❌ Erro MongoDB:", e.message));
 
