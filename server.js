@@ -310,11 +310,11 @@ async function load(){
       var cls=expirou?'exp':dias<=5?'warn':'ok';
       expiraStr='<span class="expira '+cls+'">'+(expirou?'Expirou ':'')+new Date(u.expira_em).toLocaleDateString('pt-BR')+((!expirou&&dias)?(' ('+dias+'d)'):'')+'</span>';
     }
-    var btns='';
-    if(!u.ativo||expirou) btns+='<button class="btn-lib" onclick="acao(\''+u._id+'\',\'liberar\')">Liberar</button>';
-    if(u.ativo&&!expirou) btns+='<button class="btn-ren" onclick="acao(\''+u._id+'\',\'renovar\')">+30 dias</button>';
-    if(u.ativo) btns+='<button class="btn-blk" onclick="acao(\''+u._id+'\',\'bloquear\')">Bloquear</button>';
-    return '<tr><td>'+u.name+'</td><td>'+u.email+'</td><td>'+badge+'</td><td>'+expiraStr+'</td><td><span class="comp" title="'+(u.comprovante||'')+'">'+(u.comprovante||'—')+'</span></td><td>'+btns+'</td></tr>';
+    var id=String(u._id);
+var btns='';
+if(!u.ativo||expirou) btns+='<button class="btn-lib" onclick="acao(\''+id+'\',\'liberar\')">Liberar</button>';
+if(u.ativo&&!expirou) btns+='<button class="btn-ren" onclick="acao(\''+id+'\',\'renovar\')">+30 dias</button>';
+if(u.ativo) btns+='<button class="btn-blk" onclick="acao(\''+id+'\',\'bloquear\')">Bloquear</button>';
   }).join('');
 }
 async function acao(id,tipo){
