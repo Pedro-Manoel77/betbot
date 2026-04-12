@@ -311,13 +311,14 @@ async function load(){
       expiraStr='<span class="expira '+cls+'">'+(expirou?'Expirou ':'')+new Date(u.expira_em).toLocaleDateString('pt-BR')+((!expirou&&dias)?(' ('+dias+'d)'):'')+'</span>';
     }
     var id=String(u._id);
-var btns='';
-if(!u.ativo||expirou) btns+='<button class="btn-lib" onclick="acao(\''+id+'\',\'liberar\')">Liberar</button>';
-if(u.ativo&&!expirou) btns+='<button class="btn-ren" onclick="acao(\''+id+'\',\'renovar\')">+30 dias</button>';
-if(u.ativo) btns+='<button class="btn-blk" onclick="acao(\''+id+'\',\'bloquear\')">Bloquear</button>';  
+    var btns='';
+    if(!u.ativo||expirou) btns+='<button class="btn-lib" data-id="'+id+'" onclick="acao(this,\'liberar\')">Liberar</button>';
+    if(u.ativo&&!expirou) btns+='<button class="btn-ren" data-id="'+id+'" onclick="acao(this,\'renovar\')">+30 dias</button>';
+    if(u.ativo) btns+='<button class="btn-blk" data-id="'+id+'" onclick="acao(this,\'bloquear\')">Bloquear</button>';  
   }).join('');
 }
-async function acao(id,tipo){
+async function acao(el,tipo){
+  var id=el.getAttribute('data-id');
   await fetch('/api/admin/'+tipo,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id})});
   load();
 }
