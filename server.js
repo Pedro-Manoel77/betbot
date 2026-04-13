@@ -6,9 +6,6 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const mongoose = require("mongoose");
 
-// ======================================================
-// ⚙️  CONFIGURAÇÕES
-// ======================================================
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY || "AIzaSyBMMm3W-TbEjLzf4-kLh1YnE0DiRAd0EOk";
 const FOOTBALL_API_KEY  = "183b5b9e068285c38162478d9829fe29";
 const JWT_SECRET        = "betbot_secret_2026";
@@ -16,11 +13,9 @@ const PRECO_MENSAL      = "R$ 60,00";
 const SEU_PIX           = "32991843008";
 const ADMIN_EMAIL       = process.env.ADMIN_EMAIL || "ztxautomacaoeprojetos@gmail.com";
 const ADMIN_SENHA       = process.env.ADMIN_SENHA || "Morreuztx7txy";
-const MONGODB_URI       = process.env.MONGODB_URI || "mongodb+srv://pedromanoel7799_db_user:88553079@cluster0.pt6bfhu.mongodb.net/betbot?retryWrites=true&w=majority&appName=Cluster0";
+const MONGODB_URI       = process.env.MONGODB_URI || "mongodb+srv://pedromanoel7799_db_user:Betbot2026@cluster0.pt6bfhu.mongodb.net/betbot?retryWrites=true&w=majority&appName=Cluster0";
 const PORT              = process.env.PORT || 3000;
-// ======================================================
 
-// Schema MongoDB
 const userSchema = new mongoose.Schema({
   name: String,
   email: { type: String, unique: true },
@@ -33,19 +28,17 @@ const userSchema = new mongoose.Schema({
 });
 const User = mongoose.model("User", userSchema);
 
-// Conecta ao MongoDB
 mongoose.connect(MONGODB_URI)
   .then(async () => {
     console.log("✅ MongoDB conectado!");
-    // Cria admin se não existir
     await User.deleteOne({ email: ADMIN_EMAIL });
-await User.create({
-  name: "Admin", email: ADMIN_EMAIL,
-  password: bcrypt.hashSync(ADMIN_SENHA, 10),
-  ativo: true, admin: true
-});
-console.log("✅ Admin recriado:", ADMIN_EMAIL);
-})
+    await User.create({
+      name: "Admin", email: ADMIN_EMAIL,
+      password: bcrypt.hashSync(ADMIN_SENHA, 10),
+      ativo: true, admin: true
+    });
+    console.log("✅ Admin recriado:", ADMIN_EMAIL);
+  })
   .catch(e => console.error("❌ Erro MongoDB:", e.message));
 
 function isAtivo(user) {
@@ -112,7 +105,12 @@ function callAnthropic(body) {
     const postData = JSON.stringify(body);
     const options = {
       hostname: "api.anthropic.com", path: "/v1/messages", method: "POST",
-      headers: { "Content-Type": "application/json", "x-api-key": ANTHROPIC_API_KEY, "anthropic-version": "2023-06-01", "Content-Length": Buffer.byteLength(postData) },
+      headers: {
+        "Content-Type": "application/json",
+        "x-api-key": ANTHROPIC_API_KEY,
+        "anthropic-version": "2023-06-01",
+        "Content-Length": Buffer.byteLength(postData)
+      },
     };
     const req = https.request(options, (res) => {
       let data = "";
@@ -125,11 +123,8 @@ function callAnthropic(body) {
   });
 }
 
-// ======================================================
-// PÁGINAS HTML
-// ======================================================
 function pageLogin() {
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot — Login</title>
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:#0d1f35;border-radius:16px;padding:32px 28px;width:100%;max-width:380px;border:0.5px solid #1a2f47}
 .logo{width:48px;height:48px;background:#00e676;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
@@ -144,22 +139,22 @@ button{width:100%;padding:13px;background:#00e676;border:none;border-radius:8px;
 .msg{font-size:12px;text-align:center;margin-top:12px;min-height:18px}.msg.err{color:#ff4848}.msg.ok{color:#00e676}
 </style></head><body>
 <div class="card">
-  <div class="logo">⚽</div>
+  <div class="logo">&#x26BD;</div>
   <h1>BetBot Analytics</h1>
-  <p class="sub">Análises esportivas por IA</p>
+  <p class="sub">Analises esportivas por IA</p>
   <div class="tabs">
     <div class="tab active" id="tabLogin" onclick="showTab('login')">Entrar</div>
     <div class="tab" id="tabCad" onclick="showTab('cad')">Cadastrar</div>
   </div>
   <div id="formLogin">
     <label>E-mail</label><input id="lEmail" type="email" placeholder="seu@email.com"/>
-    <label>Senha</label><input id="lSenha" type="password" placeholder="••••••••"/>
+    <label>Senha</label><input id="lSenha" type="password" placeholder="********"/>
     <button onclick="login()">Entrar</button>
   </div>
   <div id="formCad" style="display:none">
     <label>Nome</label><input id="cNome" placeholder="Seu nome"/>
     <label>E-mail</label><input id="cEmail" type="email" placeholder="seu@email.com"/>
-    <label>Senha</label><input id="cSenha" type="password" placeholder="Mínimo 6 caracteres"/>
+    <label>Senha</label><input id="cSenha" type="password" placeholder="Minimo 6 caracteres"/>
     <button onclick="cadastrar()">Criar conta</button>
   </div>
   <div class="msg" id="msg"></div>
@@ -177,11 +172,11 @@ async function login(){
   var email=document.getElementById('lEmail').value.trim();
   var senha=document.getElementById('lSenha').value;
   if(!email||!senha){msg('Preencha todos os campos','err');return;}
-  var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,senha})});
+  var res=await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:email,senha:senha})});
   var data=await res.json();
   if(data.token){
     localStorage.setItem('token',data.token);
-    localStorage.setItem('admin',data.admin);
+    localStorage.setItem('admin',String(data.admin));
     if(data.admin) window.location='/admin';
     else if(data.ativo_agora) window.location='/app';
     else window.location='/pagamento';
@@ -193,16 +188,16 @@ async function cadastrar(){
   var senha=document.getElementById('cSenha').value;
   if(!nome||!email||!senha){msg('Preencha todos os campos','err');return;}
   if(senha.length<6){msg('Senha muito curta','err');return;}
-  var res=await fetch('/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome,email,senha})});
+  var res=await fetch('/api/cadastro',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:nome,email:email,senha:senha})});
   var data=await res.json();
-  if(data.ok) msg('Conta criada! Agora faça login.','ok');
+  if(data.ok) msg('Conta criada! Agora faca login.','ok');
   else msg(data.error||'Erro ao cadastrar','err');
 }
 </script></body></html>`;
 }
 
-function pagePagamento(user) {
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot — Pagamento</title>
+function pagePagamento() {
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot - Pagamento</title>
 <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 .card{background:#0d1f35;border-radius:16px;padding:32px 28px;width:100%;max-width:400px;border:0.5px solid #1a2f47;text-align:center}
 .logo{width:48px;height:48px;background:#00e676;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 16px}
@@ -220,23 +215,23 @@ button.main{width:100%;padding:13px;background:#00e676;border:none;border-radius
 .logout{color:#556677;font-size:11px;cursor:pointer;margin-top:16px;display:block}
 </style></head><body>
 <div class="card">
-  <div class="logo">⚽</div>
+  <div class="logo">&#x26BD;</div>
   <h1>Ativar Acesso</h1>
-  <p class="sub">Faça o pagamento para liberar seu acesso ao BetBot.</p>
+  <p class="sub">Faca o pagamento para liberar seu acesso ao BetBot.</p>
   <div class="preco">${PRECO_MENSAL}</div>
-  <div class="preco-sub">por mês — acesso renovável mensalmente</div>
+  <div class="preco-sub">por mes - acesso renovavel mensalmente</div>
   <div class="pix-box">
     <div class="pix-label">Chave PIX</div>
-    <div class="pix-key">${SEU_PIX}</div>
-    <button class="copy-btn" onclick="navigator.clipboard.writeText('${SEU_PIX}');this.textContent='✅ Copiado!'">📋 Copiar chave</button>
+    <div class="pix-key" id="pixkey">${SEU_PIX}</div>
+    <button class="copy-btn" onclick="document.getElementById('pixkey').textContent;navigator.clipboard.writeText('${SEU_PIX}');this.textContent='Copiado!'">Copiar chave</button>
   </div>
   <div class="steps">
-    <div class="step"><div class="step-num">1</div><span>Faça o PIX de <strong style="color:#00e676">${PRECO_MENSAL}</strong> para a chave acima</span></div>
+    <div class="step"><div class="step-num">1</div><span>Faca o PIX de <strong style="color:#00e676">${PRECO_MENSAL}</strong> para a chave acima</span></div>
     <div class="step"><div class="step-num">2</div><span>Cole o comprovante abaixo</span></div>
-    <div class="step"><div class="step-num">3</div><span>Liberado em até 1 hora — acesso válido por 30 dias</span></div>
+    <div class="step"><div class="step-num">3</div><span>Liberado em ate 1 hora - acesso valido por 30 dias</span></div>
   </div>
-  <textarea id="comp" rows="3" placeholder="Cole aqui o comprovante ou número da transação PIX..."></textarea>
-  <button class="main" onclick="enviar()">✅ Enviei o comprovante</button>
+  <textarea id="comp" rows="3" placeholder="Cole aqui o comprovante ou numero da transacao PIX..."></textarea>
+  <button class="main" onclick="enviar()">Enviei o comprovante</button>
   <div class="msg" id="msg"></div>
   <span class="logout" onclick="localStorage.clear();window.location='/'">Sair da conta</span>
 </div>
@@ -249,86 +244,109 @@ async function enviar(){
   if(!comp){msg('Cole o comprovante antes de enviar','err');return;}
   var res=await fetch('/api/comprovante',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({comprovante:comp})});
   var data=await res.json();
-  if(data.ok) msg('Comprovante enviado! Aguarde a liberação.','ok');
+  if(data.ok) msg('Comprovante enviado! Aguarde a liberacao.','ok');
   else msg(data.error||'Erro','err');
 }
 </script></body></html>`;
 }
 
 function pageAdmin() {
-  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot — Admin</title>
-<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;padding:20px}
+  return `<!DOCTYPE html><html lang="pt-BR"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/><title>BetBot - Admin</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',sans-serif;background:#060f1e;min-height:100vh;padding:20px}
 .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-h1{color:#fff;font-size:20px}.logout{color:#8899aa;cursor:pointer;background:transparent;border:0.5px solid #1a2f47;padding:7px 14px;border-radius:8px;font-size:13px}
+h1{color:#fff;font-size:20px}
+.logout{color:#8899aa;cursor:pointer;background:transparent;border:0.5px solid #1a2f47;padding:7px 14px;border-radius:8px;font-size:13px}
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;margin-bottom:24px}
 .stat{background:#0d1f35;border-radius:10px;padding:14px;text-align:center;border:0.5px solid #1a2f47}
-.stat-val{color:#00e676;font-size:22px;font-weight:600}.stat-lbl{color:#556677;font-size:11px;margin-top:3px}
-table{width:100%;border-collapse:collapse;background:#0d1f35;border-radius:10px;overflow:hidden;border:0.5px solid #1a2f47}
+.stat-val{color:#00e676;font-size:22px;font-weight:600}
+.stat-lbl{color:#556677;font-size:11px;margin-top:3px}
+.tbl{width:100%;border-collapse:collapse;background:#0d1f35;border-radius:10px;border:0.5px solid #1a2f47}
 th{background:#0a1628;color:#8899aa;font-size:11px;text-transform:uppercase;padding:10px 14px;text-align:left}
 td{padding:10px 14px;border-top:0.5px solid #1a2f47;color:#ddeeff;font-size:12px}
 .badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10px}
-.badge-ok{background:rgba(0,230,118,.15);color:#00e676}
-.badge-exp{background:rgba(255,72,72,.15);color:#ff4848}
-.badge-pend{background:rgba(255,215,64,.15);color:#ffd740}
-.badge-no{background:rgba(100,100,100,.2);color:#8899aa}
+.b-ok{background:rgba(0,230,118,.15);color:#00e676}
+.b-exp{background:rgba(255,72,72,.15);color:#ff4848}
+.b-pend{background:rgba(255,215,64,.15);color:#ffd740}
+.b-no{background:rgba(100,100,100,.2);color:#8899aa}
 .btn-lib{background:#00e676;border:none;padding:5px 10px;border-radius:6px;color:#060f1e;font-size:11px;font-weight:600;cursor:pointer;margin-right:4px}
 .btn-ren{background:#1a2f47;border:0.5px solid #00e676;padding:5px 10px;border-radius:6px;color:#00e676;font-size:11px;cursor:pointer;margin-right:4px}
 .btn-blk{background:transparent;border:0.5px solid #ff4848;padding:5px 10px;border-radius:6px;color:#ff4848;font-size:11px;cursor:pointer}
 .comp{color:#8899aa;font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.expira{font-size:11px}.expira.ok{color:#00e676}.expira.warn{color:#ffd740}.expira.exp{color:#ff4848}
-</style></head><body>
-<div class="header"><h1>⚽ BetBot — Painel Admin</h1><button class="logout" onclick="localStorage.clear();window.location='/'">Sair</button></div>
-<div class="stats" id="stats"></div>
-<table><thead><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Expira em</th><th>Comprovante</th><th>Ações</th></tr></thead>
-<tbody id="tbody"></tbody></table>
+</style>
+</head><body>
+<div class="header"><h1>BetBot - Painel Admin</h1><button class="logout" onclick="localStorage.clear();window.location='/'">Sair</button></div>
+<div class="stats" id="stats">Carregando...</div>
+<table class="tbl"><thead><tr><th>Nome</th><th>E-mail</th><th>Status</th><th>Expira em</th><th>Comprovante</th><th>Acoes</th></tr></thead>
+<tbody id="tbody"><tr><td colspan="6" style="text-align:center;color:#556677;padding:20px">Carregando usuarios...</td></tr></tbody></table>
 <script>
-var token=localStorage.getItem('token');
-if(!token||localStorage.getItem('admin')!=='true') window.location='/';
-function diasRestantes(exp){
+var token = localStorage.getItem('token');
+var isAdmin = localStorage.getItem('admin');
+if(!token || isAdmin !== 'true') { window.location='/'; }
+
+function dr(exp){
   if(!exp) return null;
-  var diff=new Date(exp)-new Date();
-  return Math.ceil(diff/(1000*60*60*24));
+  return Math.ceil((new Date(exp)-new Date())/(1000*60*60*24));
 }
+
 async function load(){
-  var res=await fetch('/api/admin/users',{headers:{'Authorization':'Bearer '+token}});
-  var data=await res.json();
-  var total=data.filter(u=>!u.admin).length;
-  var ativos=data.filter(u=>!u.admin&&u.ativo&&u.expira_em&&new Date(u.expira_em)>new Date()).length;
-  var pend=data.filter(u=>!u.admin&&!u.ativo&&u.comprovante).length;
-  var expirando=data.filter(u=>!u.admin&&u.ativo&&u.expira_em&&diasRestantes(u.expira_em)<=5&&diasRestantes(u.expira_em)>0).length;
-  document.getElementById('stats').innerHTML=
-    '<div class="stat"><div class="stat-val">'+total+'</div><div class="stat-lbl">Assinantes</div></div>'+
-    '<div class="stat"><div class="stat-val" style="color:#00e676">'+ativos+'</div><div class="stat-lbl">Ativos</div></div>'+
-    '<div class="stat"><div class="stat-val" style="color:#ffd740">'+pend+'</div><div class="stat-lbl">Aguardando</div></div>'+
-    '<div class="stat"><div class="stat-val" style="color:#ff7043">'+expirando+'</div><div class="stat-lbl">Expirando</div></div>';
-  document.getElementById('tbody').innerHTML=data.filter(u=>!u.admin).map(function(u){
-    var dias=diasRestantes(u.expira_em);
-    var expirou=u.expira_em&&new Date(u.expira_em)<new Date();
-    var badge=expirou?'<span class="badge badge-exp">Expirado</span>':u.ativo?'<span class="badge badge-ok">Ativo</span>':u.comprovante?'<span class="badge badge-pend">Aguardando</span>':'<span class="badge badge-no">Pendente</span>';
-    var expiraStr='—';
-    if(u.expira_em){
-      var cls=expirou?'exp':dias<=5?'warn':'ok';
-      expiraStr='<span class="expira '+cls+'">'+(expirou?'Expirou ':'')+new Date(u.expira_em).toLocaleDateString('pt-BR')+((!expirou&&dias)?(' ('+dias+'d)'):'')+'</span>';
+  try {
+    var res = await fetch('/api/admin/users', {headers:{'Authorization':'Bearer '+token}});
+    var data = await res.json();
+    if(data.error){ document.getElementById('tbody').innerHTML='<tr><td colspan="6" style="color:#ff4848;text-align:center;padding:20px">Erro: '+data.error+'</td></tr>'; return; }
+    var clientes = data.filter(function(u){return !u.admin;});
+    var ativos = clientes.filter(function(u){return u.ativo && u.expira_em && new Date(u.expira_em)>new Date();}).length;
+    var pend = clientes.filter(function(u){return !u.ativo && u.comprovante;}).length;
+    document.getElementById('stats').innerHTML =
+      '<div class="stat"><div class="stat-val">'+clientes.length+'</div><div class="stat-lbl">Total</div></div>'+
+      '<div class="stat"><div class="stat-val" style="color:#00e676">'+ativos+'</div><div class="stat-lbl">Ativos</div></div>'+
+      '<div class="stat"><div class="stat-val" style="color:#ffd740">'+pend+'</div><div class="stat-lbl">Aguardando</div></div>';
+    if(clientes.length === 0){
+      document.getElementById('tbody').innerHTML='<tr><td colspan="6" style="text-align:center;color:#556677;padding:20px">Nenhum usuario cadastrado ainda.</td></tr>';
+      return;
     }
-    var id=String(u._id);
-    var btns='';
-    if(!u.ativo||expirou) btns+='<button class="btn-lib" data-id="'+id+'" onclick="acao(this,\'liberar\')">Liberar</button>';
-    if(u.ativo&&!expirou) btns+='<button class="btn-ren" data-id="'+id+'" onclick="acao(this,\'renovar\')">+30 dias</button>';
-    if(u.ativo) btns+='<button class="btn-blk" data-id="'+id+'" onclick="acao(this,\'bloquear\')">Bloquear</button>';
-  }).join('');
+    var rows = '';
+    for(var i=0;i<clientes.length;i++){
+      var u = clientes[i];
+      var expirou = u.expira_em && new Date(u.expira_em) < new Date();
+      var dias = dr(u.expira_em);
+      var badge = expirou ? '<span class="badge b-exp">Expirado</span>' : u.ativo ? '<span class="badge b-ok">Ativo</span>' : u.comprovante ? '<span class="badge b-pend">Aguardando</span>' : '<span class="badge b-no">Pendente</span>';
+      var expStr = u.expira_em ? new Date(u.expira_em).toLocaleDateString('pt-BR')+(dias&&!expirou?' ('+dias+'d)':'') : '-';
+      var id = String(u._id);
+      var btns = '';
+      if(!u.ativo || expirou) btns += '<button class="btn-lib" onclick="liberar(this)" data-id="'+id+'">Liberar</button>';
+      if(u.ativo && !expirou) btns += '<button class="btn-ren" onclick="renovar(this)" data-id="'+id+'">+30 dias</button>';
+      if(u.ativo) btns += '<button class="btn-blk" onclick="bloquear(this)" data-id="'+id+'">Bloquear</button>';
+      rows += '<tr><td>'+u.name+'</td><td>'+u.email+'</td><td>'+badge+'</td><td>'+expStr+'</td><td><span class="comp">'+(u.comprovante||'-')+'</span></td><td>'+btns+'</td></tr>';
+    }
+    document.getElementById('tbody').innerHTML = rows;
+  } catch(e) {
+    document.getElementById('tbody').innerHTML='<tr><td colspan="6" style="color:#ff4848;text-align:center;padding:20px">Erro ao carregar: '+e.message+'</td></tr>';
+  }
 }
-async function acao(el,tipo){
-  var id=el.getAttribute('data-id');
-  await fetch('/api/admin/'+tipo,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id})});
+
+async function liberar(el){
+  var id = el.getAttribute('data-id');
+  await fetch('/api/admin/liberar',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id:id})});
   load();
 }
-load();setInterval(load,30000);
+async function renovar(el){
+  var id = el.getAttribute('data-id');
+  await fetch('/api/admin/renovar',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id:id})});
+  load();
+}
+async function bloquear(el){
+  var id = el.getAttribute('data-id');
+  await fetch('/api/admin/bloquear',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify({id:id})});
+  load();
+}
+
+load();
+setInterval(load, 15000);
 </script></body></html>`;
 }
 
-// ======================================================
-// SERVIDOR
-// ======================================================
 const server = http.createServer(async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
@@ -339,29 +357,27 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && url === "/") return sendHTML(res, pageLogin());
   if (req.method === "GET" && url === "/admin") return sendHTML(res, pageAdmin());
-  if (req.method === "GET" && url === "/pagamento") return sendHTML(res, pagePagamento({ name: "Usuário" }));
+  if (req.method === "GET" && url === "/pagamento") return sendHTML(res, pagePagamento());
 
   if (req.method === "GET" && url === "/app") {
     const filePath = path.join(__dirname, "index.html");
     fs.readFile(filePath, (err, data) => {
-      if (err) { res.writeHead(404); res.end("index.html não encontrado"); return; }
+      if (err) { res.writeHead(404); res.end("index.html nao encontrado"); return; }
       res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
       res.end(data);
     });
     return;
   }
 
-  // Cadastro
   if (req.method === "POST" && url === "/api/cadastro") {
     const body = await getBody(req);
     if (!body.nome || !body.email || !body.senha) return sendJSON(res, 400, { error: "Preencha todos os campos" });
     const exists = await User.findOne({ email: body.email });
-    if (exists) return sendJSON(res, 400, { error: "E-mail já cadastrado" });
+    if (exists) return sendJSON(res, 400, { error: "E-mail ja cadastrado" });
     await User.create({ name: body.nome, email: body.email, password: bcrypt.hashSync(body.senha, 10) });
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Login
   if (req.method === "POST" && url === "/api/login") {
     const body = await getBody(req);
     const user = await User.findOne({ email: body.email });
@@ -371,36 +387,32 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { token, admin: user.admin, ativo_agora });
   }
 
-  // Me
   if (req.method === "GET" && url === "/api/me") {
     const decoded = verifyToken(req);
-    if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
+    if (!decoded) return sendJSON(res, 401, { error: "Nao autenticado" });
     const user = await User.findById(decoded.id);
-    if (!user) return sendJSON(res, 401, { error: "Usuário não encontrado" });
+    if (!user) return sendJSON(res, 401, { error: "Usuario nao encontrado" });
     return sendJSON(res, 200, { id: user._id, name: user.name, email: user.email, ativo: isAtivo(user), admin: user.admin, expira_em: user.expira_em, dias_restantes: diasRestantes(user) });
   }
 
-  // Comprovante
   if (req.method === "POST" && url === "/api/comprovante") {
     const decoded = verifyToken(req);
-    if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
+    if (!decoded) return sendJSON(res, 401, { error: "Nao autenticado" });
     const body = await getBody(req);
     await User.findByIdAndUpdate(decoded.id, { comprovante: body.comprovante || "" });
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Admin: listar
   if (req.method === "GET" && url === "/api/admin/users") {
     const decoded = verifyToken(req);
-    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
-    const users = await User.find().sort({ createdAt: -1 });
+    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissao" });
+    const users = await User.find().sort({ criado_em: -1 });
     return sendJSON(res, 200, users);
   }
 
-  // Admin: liberar
   if (req.method === "POST" && url === "/api/admin/liberar") {
     const decoded = verifyToken(req);
-    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
+    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissao" });
     const body = await getBody(req);
     const expira = new Date();
     expira.setDate(expira.getDate() + 30);
@@ -408,10 +420,9 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Admin: renovar
   if (req.method === "POST" && url === "/api/admin/renovar") {
     const decoded = verifyToken(req);
-    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
+    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissao" });
     const body = await getBody(req);
     const user = await User.findById(body.id);
     const base = user.expira_em && new Date(user.expira_em) > new Date() ? new Date(user.expira_em) : new Date();
@@ -420,19 +431,17 @@ const server = http.createServer(async (req, res) => {
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Admin: bloquear
   if (req.method === "POST" && url === "/api/admin/bloquear") {
     const decoded = verifyToken(req);
-    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissão" });
+    if (!decoded || !decoded.admin) return sendJSON(res, 403, { error: "Sem permissao" });
     const body = await getBody(req);
     await User.findByIdAndUpdate(body.id, { ativo: false });
     return sendJSON(res, 200, { ok: true });
   }
 
-  // Fixtures
   if (req.method === "GET" && url === "/api/fixtures") {
     const decoded = verifyToken(req);
-    if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
+    if (!decoded) return sendJSON(res, 401, { error: "Nao autenticado" });
     try {
       const fixtures = await getFixturesToday();
       const result = fixtures.sort((a, b) => a.fixture.timestamp - b.fixture.timestamp).slice(0, 15);
@@ -440,10 +449,9 @@ const server = http.createServer(async (req, res) => {
     } catch (e) { return sendJSON(res, 500, { error: e.message }); }
   }
 
-  // Chat IA
   if (req.method === "POST" && url === "/api/chat") {
     const decoded = verifyToken(req);
-    if (!decoded) return sendJSON(res, 401, { error: "Não autenticado" });
+    if (!decoded) return sendJSON(res, 401, { error: "Nao autenticado" });
     const body = await getBody(req);
     try {
       const result = await callAnthropic(body);
@@ -453,7 +461,7 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(404); res.end("Não encontrado");
+  res.writeHead(404); res.end("Nao encontrado");
 });
 
 server.listen(PORT, () => {
@@ -464,9 +472,9 @@ server.listen(PORT, () => {
   console.log("╚══════════════════════════════════════╝");
   console.log("");
   console.log("💰 PIX:", SEU_PIX);
-  console.log("💵 Preço:", PRECO_MENSAL, "/ mês");
+  console.log("💵 Preco:", PRECO_MENSAL, "/ mes");
   console.log("");
-  if (ANTHROPIC_API_KEY === "SUA_CHAVE_ANTHROPIC_AQUI") console.log("⚠️  Configure ANTHROPIC_API_KEY");
+  if (ANTHROPIC_API_KEY === "SUA_CHAVE_AQUI") console.log("⚠️  Configure ANTHROPIC_API_KEY");
   else console.log("✅ Anthropic configurada");
   console.log("✅ API-Football configurada");
 });
