@@ -477,4 +477,14 @@ server.listen(PORT, () => {
   if (ANTHROPIC_API_KEY === "SUA_CHAVE_AQUI") console.log("⚠️  Configure ANTHROPIC_API_KEY");
   else console.log("✅ Anthropic configurada");
   console.log("✅ API-Football configurada");
+  fetch("https://v3.football.api-sports.io/fixtures?live=all", {
+  headers: {
+    "x-apisports-key": "183b5b9e068285c38162478d9829fe29"
+  }
+})
+.then(res => res.json())
+.then(data => {
+  console.log("DADOS:", data);
+})
+.catch(err => console.log("ERRO:", err));
 });
